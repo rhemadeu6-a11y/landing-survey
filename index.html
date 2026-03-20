@@ -888,8 +888,7 @@ document.getElementById('surveyForm').addEventListener('submit', function(e) {
   e.preventDefault();
   if (!validateStep(currentStep)) return;
 
-  // ★ 아래 URL을 Google Apps Script 배포 URL로 교체하세요
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyUt_m2EQAK9Ty2AIrd44tIjjftp0UHoAgp6xBOb1qRkOaGlwJxCamEjZ4met6vh9Ep/exec';
+  const WEB3FORMS_KEY = '027572cc-6ed8-456a-807f-dd12bb14b15f';
 
   // Collect form data
   const formData = new FormData(this);
@@ -909,19 +908,51 @@ document.getElementById('surveyForm').addEventListener('submit', function(e) {
   submitBtn.disabled = true;
   submitBtn.innerHTML = '전송 중...';
 
-  // Send to Google Sheets
-  fetch(GOOGLE_SCRIPT_URL, {
+  // Build Web3Forms payload
+  const payload = {
+    access_key: WEB3FORMS_KEY,
+    subject: '🔔 새 랜딩페이지 상담 신청 - ' + (data.company || ''),
+    from_name: '랜딩페이지 설문 폼',
+    '1. 회사명': data.company || '',
+    '2. 담당자명': data.contact_name || '',
+    '3. 연락처': data.phone || '',
+    '4. 이메일': data.email || '',
+    '5. 업종': data.industry || '',
+    '6. 랜딩페이지 목적': data.purpose || '',
+    '7. CTA': Array.isArray(data.cta) ? data.cta.join(', ') : (data.cta || ''),
+    '8. 참고 사이트': data.reference_urls || '',
+    '9. 타겟 고객': data.target || '',
+    '10. 핵심 강점': data.strengths || '',
+    '11. 톤앤매너': data.tone || '',
+    '12. 브랜드 컬러': data.brand_color || '',
+    '13. 이미지 소재': data.assets || '',
+    '14. 기존 웹사이트': data.existing_url || '',
+    '15. 필요 기능': Array.isArray(data.features) ? data.features.join(', ') : (data.features || ''),
+    '16. 희망 완료일': data.deadline || '',
+    '17. 예산 범위': data.budget || '',
+    '18. 추가 요청사항': data.notes || ''
+  };
+
+  // Send to Web3Forms
+  fetch('https://api.web3forms.com/submit', {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(data)
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   })
   .then(res => res.json())
   .then(result => {
-    document.getElementById('overlay').classList.add('show');
+    if (result.success) {
+      document.getElementById('overlay').classList.add('show');
+    } else {
+      alert('전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
   })
   .catch(() => {
-    // no-cors fallback: opaque response도 성공으로 처리
-    document.getElementById('overlay').classList.add('show');
+    alert('전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
   });
 });
 
